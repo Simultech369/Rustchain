@@ -67,18 +67,21 @@ export class RustChainClient {
     return this.request("GET", withQuery("/wallet/balance", params));
   }
 
-  async transfer({ from, to, amount, signature, fee = 0.01 }) {
-    assertNonEmptyString(from, "from");
-    assertNonEmptyString(to, "to");
-    validatePositiveNumber(amount, "amount");
-    validateNonNegativeNumber(fee, "fee");
+  async transfer({ fromAddress, toAddress, amountRtc, nonce, signature, publicKey }) {
+    assertNonEmptyString(fromAddress, "fromAddress");
+    assertNonEmptyString(toAddress, "toAddress");
+    validatePositiveNumber(amountRtc, "amountRtc");
+    assertNonEmptyString(nonce, "nonce");
+    assertNonEmptyString(signature, "signature");
+    assertNonEmptyString(publicKey, "publicKey");
 
-    return this.request("POST", "/transfer", {
-      from,
-      to,
-      amount,
-      fee,
-      ...(signature ? { signature } : {})
+    return this.request("POST", "/wallet/transfer/signed", {
+      from_address: fromAddress,
+      to_address: toAddress,
+      amount_rtc: amountRtc,
+      nonce,
+      signature,
+      public_key: publicKey
     });
   }
 
@@ -93,9 +96,13 @@ export class RustChainClient {
     return this.request("POST", "/attest/submit", payload);
   }
 
-  async transferHistory(wallet, options = {}) {
-    assertNonEmptyString(wallet, "wallet");
-    const params = new URLSearchParams({ wallet });
+  async transferHistory(options = {}) {
+    const params = new URLSearchParams();
+    if (options.minerId) params.set("miner_id", options.minerId);
+    if (options.address) params.set("address", options.address);
+    if (!params.has("miner_id") && !params.has("address")) {
+      throw new RustChainValidationError("transferHistory requires minerId or address");
+    }
     if (options.limit !== undefined) params.set("limit", String(validatePositiveInteger(options.limit, "limit")));
     return this.request("GET", withQuery("/wallet/history", params));
   }

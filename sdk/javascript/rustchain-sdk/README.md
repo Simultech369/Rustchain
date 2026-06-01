@@ -43,10 +43,36 @@ Options:
 - `epoch()` -> `GET /epoch`
 - `miners({ limit, offset, hardwareType })` -> `GET /api/miners`
 - `balance(minerId)` -> `GET /wallet/balance?miner_id=...`
-- `transfer({ from, to, amount, signature, fee })` -> `POST /transfer`
+- `transfer({ fromAddress, toAddress, amountRtc, nonce, signature, publicKey })` -> `POST /wallet/transfer/signed`
 - `attestChallenge(payload)` -> `POST /attest/challenge`
 - `submitAttestation(payload)` -> `POST /attest/submit`
-- `transferHistory(wallet, { limit })` -> `GET /wallet/history`
+- `transferHistory({ minerId, address, limit })` -> `GET /wallet/history?miner_id=...` or `GET /wallet/history?address=...`
+
+### Signed transfers
+
+`transfer()` is wired to the public signed wallet transfer endpoint:
+
+```js
+await client.transfer({
+  fromAddress: "sender-wallet",
+  toAddress: "recipient-wallet",
+  amountRtc: 1.25,
+  nonce: "challenge-or-client-nonce",
+  signature: "ed25519-signature",
+  publicKey: "sender-public-key"
+});
+```
+
+The SDK intentionally does not default to the admin `/wallet/transfer` route, which requires an `X-Admin-Key` flow.
+
+### Transfer history
+
+Query history by miner ID or wallet address:
+
+```js
+await client.transferHistory({ minerId: "alice", limit: 10 });
+await client.transferHistory({ address: "wallet-address" });
+```
 
 ## Example
 
